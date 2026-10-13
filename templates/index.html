@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ACEest Fitness & Performance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>ACEest Dashboard {% if user %}({{ user.role }}){% endif %}</h1>
+    </div>
+    
+    <div class="main-container">
+        {% if not user %}
+        <div class="login-box">
+            <h2>ACEest Login</h2>
+            <input type="text" id="username" placeholder="Username (admin)">
+            <input type="password" id="password" placeholder="Password (admin)">
+            <button onclick="login()">Login</button>
+        </div>
+        {% else %}
+        <div class="panel left-panel">
+            <h3>Client Management</h3>
+            <button onclick="logout()">Logout</button>
+            <hr>
+            <input type="text" id="newClientName" placeholder="Enter new client name">
+            <button onclick="addClient()">Add / Save Client</button>
+            <hr>
+            <button onclick="loadClients()">Refresh Client List</button>
+            <ul id="clientList"></ul>
+        </div>
+        <div class="panel right-panel">
+            <h3>Client Summary & Workouts</h3>
+            <div id="summaryBox" class="summary-box">
+                Select or add a client to view details.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        async function login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: u, password: p})
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert("Invalid credentials");
+            }
+        }
+
+        async function logout() {
+            await fetch('/logout', {method: 'POST'});
+            window.location.reload();
+        }
+
+        async function addClient() {
+            const name = document.getElementById('newClientName').value;
+            if (!name) {
+                alert("Enter a name");
+                return;
+            }
+            const res = await fetch('/api/clients', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: name})
+            });
+            if (res.ok) {
+                alert("Client saved");
+                document.getElementById('newClientName').value = '';
+                loadClients();
+            }
+        }
+
+        async function loadClients() {
+            const list = document.getElementById('clientList');
+            if (!list) return; 
+            
+            const res = await fetch('/api/clients');
+            const data = await res.json();
+            list.innerHTML = '';
+            
+            if (data.clients) {
+                data.clients.forEach(function(c) {
+                    const li = document.createElement('li');
+                    li.innerText = c.name + " - Status: " + c.status;
+                    list.appendChild(li);
+                });
+            }
+        }
+        
+        window.onload = function() {
+            if (document.getElementById('clientList')) {
+                loadClients();
+            }
+        };
+    </script>
+</body>
+</html>
