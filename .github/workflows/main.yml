@@ -1,0 +1,45 @@
+name: ACEest CI/CD Pipeline
+
+# Trigger the pipeline on every push or pull request
+on:
+  push:
+    branches: [ "main", "feature/*", "**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-test-and-containerize:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout the source code
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # 2. Set up Python for Linting
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install Linter
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+
+    # 3. Build & Lint (Check for syntax errors)
+    - name: Run Linter (Syntax Check)
+      run: |
+        flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    # 4. Docker Image Assembly
+    - name: Build Docker Image
+      run: |
+        echo "Assembling Docker Image..."
+        docker build -t aceest-fitness-app:latest .
+
+    # 5. Automated Testing (Executed inside the containerized environment)
+    - name: Run Pytest Inside Docker
+      run: |
+        echo "Running test suite inside the container..."
+        docker run --rm aceest-fitness-app:latest python -m pytest --cov=app tests/
