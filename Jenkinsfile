@@ -3,7 +3,6 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Pulls the latest code from GitHub
                 checkout scm
             }
         }
@@ -23,7 +22,7 @@ pipeline {
                 echo 'Running Pytest Validation...'
                 sh '''
                     . venv/bin/activate
-                    pytest tests/
+                    python3 -m pytest --cov=app tests/
                 '''
             }
         }
